@@ -6,8 +6,12 @@ services:
       file: common.yml
       service: claude_shop_db
     restart: always
+    ports:
+      - 6603:3306
     environment:
       MYSQL_DATABASE: shop
+      MYSQL_USER: shop
+      MYSQL_PASSWORD: mariapwd
       MYSQL_ROOT_PASSWORD: mariapwd
 
   claude_shop_php-fpm:
