@@ -1,0 +1,64 @@
+version: '2.2'
+
+services:
+  claude_shop_db:
+    extends:
+      file: common.yml
+      service: claude_shop_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: shop
+      MYSQL_ROOT_PASSWORD: mariapwd
+
+  claude_shop_php-fpm:
+    extends:
+      file: common.yml
+      service: claude_shop_php-fpm
+    depends_on:
+      - claude_shop_redis
+    restart: always
+    build:
+      args:
+        development: 1
+        http_proxy: http://192.168.7.240:8080
+        https_proxy: http://192.168.7.240:8080
+        phpini: php_dev_claude.ini
+    environment:
+      XDEBUG_CONFIG: "client_host=192.168.51.250"
+      PHP_IDE_CONFIG: serverName=portal
+      http_proxy: http://192.168.7.240:8080
+      https_proxy: http://192.168.7.240:8080
+    links:
+      - claude_shop_db
+
+  claude_shop_nginx:
+    extends:
+      file: common.yml
+      service: claude_shop_nginx
+    restart: always
+    depends_on:
+      - claude_shop_php-fpm
+    build:
+      args:
+        development: 1
+        nginxconf: nginx_dev_claude.conf
+        http_proxy: http://192.168.7.240:8080
+        https_proxy: http://192.168.7.240:8080
+    labels:
+      - "traefik.http.routers.shop-secure.rule=Host(`shop.development.claude`)"
+    links:
+      - claude_shop_php-fpm
+
+  claude_shop_redis:
+    extends:
+      file: common.yml
+      service: claude_shop_redis
+    restart: always
+
+networks:
+  portal-net:
+    external: true
+  traefik-net:
+    external: true
+  database-net:
+    external: true

@@ -1,0 +1,2 @@
+0 0 * * * root /usr/local/bin/php /var/www/html/bin/console technicalData:dailyMail >> /var/log/cron/cron.log 2>&1
+0 0 * * * root /usr/local/bin/php /var/www/html/bin/console technicalData:dailyMailViaABUKonfis >> /var/log/cron/cron.log 2>&1

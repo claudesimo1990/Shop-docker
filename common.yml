@@ -1,0 +1,56 @@
+version: '2.2'
+
+services:
+  claude_shop_db:
+    build: ./mariadb
+    container_name: claude_shop_db
+    hostname: claude_shop_db
+    volumes:
+      - /srv/shop/data/mariadb:/var/lib/mysql
+      - /srv/shop/logs/mysql:/var/logs/mysql
+    networks:
+      - portal-net
+      - database-net
+
+  claude_shop_php-fpm:
+    build: ./php-fpm
+    container_name: claude_shop_php-fpm
+    hostname: claude_shop_php-fpm
+    cpus: 3.4
+    volumes:
+      - /srv/shop/data/www:/var/www/html
+      - /srv/portal/data/data:/var/www/data
+      - /srv/shop/logs/php-fpm:/var/log/php
+      - /srv/shop/logs/cron:/var/log/cron
+    user: root
+    networks:
+      - portal-net
+
+  claude_shop_nginx:
+    build: ./nginx
+    container_name: claude_shop_nginx
+    hostname: claude_shop_nginx
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shop-secure.entrypoints=frontendsecure"
+      - "traefik.http.routers.shop-secure.service=shop"
+      - "traefik.http.routers.shop-secure.tls=true"
+      - "traefik.http.services.shop.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.shop-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.shop-secure.middlewares=shop-headers"
+    volumes:
+      - /srv/shop/data/www:/var/www/html
+      - /srv/shop/logs/nginx:/var/log/nginx
+    networks:
+      - portal-net
+      - traefik-net
+
+  claude_shop_redis:
+    build: ./redis
+    container_name: claude_shop_redis
+    hostname:  claude_shop_redis
+    volumes:
+      - /srv/shop/data/redis:/data
+    networks:
+      - portal-net
+      - database-net

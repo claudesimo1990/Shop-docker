@@ -1,0 +1,56 @@
+version: '2.2'
+
+services:
+  claude_shop_db:
+    extends:
+      file: common.yml
+      service: claude_shop_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mariapwd
+
+  claude_shop_php-fpm:
+    extends:
+      file: common.yml
+      service: claude_shop_php-fpm
+    depends_on:
+      - claude_shop_redis
+    restart: always
+    build:
+      args:
+        phpini: php_prod.ini
+    links:
+      - claude_shop_db
+
+  claude_shop_nginx:
+    extends:
+      file: common.yml
+      service: claude_shop_nginx
+    restart: always
+    depends_on:
+      - claude_shop_php-fpm
+    build:
+      args:
+        nginxconf: nginx_prod.conf
+    volumes:
+      - /etc/ssl/abus-bkp/chain.abus-kransysteme.de.crt:/etc/nginx/ssl/abus-kransysteme.de.crt
+      - /etc/ssl/abus-bkp/abus-kransysteme.de.key:/etc/nginx/ssl/abus-kransysteme.de.key
+    labels:
+      - "traefik.http.routers.shop-secure.rule=Host(`shop.colissend.com`)"
+      - "traefik.http.routers.shop-secure.tls.certresolver=leresolver"
+    links:
+      - claude_shop_php-fpm
+
+  claude_shop_redis:
+    extends:
+      file: common.yml
+      service: claude_shop_redis
+    restart: always
+
+networks:
+  portal-net:
+    external: true
+  traefik-net:
+    external: true
+  database-net:
+    external: true

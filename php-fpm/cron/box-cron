@@ -1,0 +1,5 @@
+15 13 * * * root /usr/local/bin/php /var/www/html/bin/console box:nextcloudConfigParser >> /var/log/cron/cron.log 2>&1
+*/10 * * * * root /usr/local/bin/php /var/www/html/bin/console box:nextcloudTempCleaner >> /var/log/cron/cron.log 2>&1
+0 5 * * * root /usr/local/bin/php /var/www/html/bin/console box:nextcloudElasticsearch >> /var/log/cron/cron.log 2>&1
+30 6 * * 0 root /usr/local/bin/php /var/www/html/bin/console box:nextcloudConfigParser >> /var/log/cron/cron.log 2>&1
+45 6 * * 0 root /usr/local/bin/php /var/www/html/bin/console box:nextcloudElasticsearch >> /var/log/cron/cron.log 2>&1

@@ -1,0 +1,1 @@
+*/10 * * * * root /usr/local/bin/php /var/www/html/bin/console cadExchange:crawl >> /var/log/cron/cadexchange.log 2>&1
