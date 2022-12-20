@@ -1,6 +1,6 @@
-FROM php:8.0.7-fpm
+FROM php:8.0.3-fpm
 
-MAINTAINER Claude SImo <jeanclaude.simo@abus-kransysteme.de>
+MAINTAINER Claude Simo <claudesimo1990@gmail.com>
 
 ARG phpini
 ARG http_proxy
@@ -18,25 +18,24 @@ RUN if [ "$useproxy" -eq "1" ]; then echo 'Acquire::http::No-Cache true;' >> /et
 RUN if [ "$useproxy" -eq "1" ]; then echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy; fi
 
 # Install additional software
-RUN apt-get update && apt-get install -y \
+RUN apt-get update \
+    && docker-php-ext-install exif \
+    && docker-php-ext-enable exif \
+    && apt-get install -y \
         git \
         zip \
         zlib1g-dev \
         libicu-dev \
         g++ \
-        libldap2-dev \
         libxml2-dev \
         libxslt1-dev \
         libbz2-dev \
         libcurl4-openssl-dev \
         file \
         libssl-dev \
-        libonig-dev \
+       libonig-dev \
         libzip-dev \
-        wget \
-        ldap-utils \
     && CFLAGS="-I/usr/src/php" docker-php-ext-install xmlreader \
-    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
     && docker-php-ext-configure intl \
     && docker-php-ext-install -j$(nproc) \
         iconv \
@@ -44,7 +43,6 @@ RUN apt-get update && apt-get install -y \
         pdo \
         pdo_mysql \
         mysqli \
-        ldap \
         intl \
         json \
         xsl \
@@ -58,26 +56,38 @@ RUN apt-get update && apt-get install -y \
         ftp \
         pcntl \
         zip \
+        soap \
+        exif \
 && apt-get autoremove -y \
     && apt-get remove -y autoconf automake libtool nasm make pkg-config libz-dev build-essential g++ \
     && apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* ~/.composer \
 && echo "Fertig"
 
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+RUN apt-get update && \
+apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev git && \
+docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ && \
+docker-php-ext-install gd
+
+RUN docker-php-ext-install pcntl
+
 # PHP konfigurieren
 COPY config/$phpini /usr/local/etc/php/conf.d/abus.ini
 
-# LDAP konfigurieren
-COPY config/ldap.conf /etc/ldap/ldap.conf
-RUN chmod 774 /etc/ldap/ldap.conf
-COPY config/abus_ldap.cert abus_ldap.cert
-RUN cat abus_ldap.cert >> /etc/ssl/certs/ca-certificates.crt
-RUN rm abus_ldap.cert
-RUN chmod 774 /etc/ssl/certs/ca-certificates.crt
+# PHP-FPM konfigurieren
+COPY config/php-fpm.conf /usr/local/etc/php-fpm.d/z_last_abus.conf
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | \
     php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install Symfony CLI
-RUN wget https://get.symfony.com/cli/installer -O - | bash \
-    && mv /root/.symfony/bin/symfony /usr/local/bin/symfony
+# Install xdebug
+#RUN if [ "$development" -eq "1" ]; then yes | pecl install xdebug-3.0.4 \
+#    && mkdir /var/log/xdebug \
+#    && touch /var/log/xdebug/remote.log \
+#    && chmod 777 /var/log/xdebug/remote.log \
+#    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
+#    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
+#    && echo "xdebug.idekey=PHPSTORM" >> /usr/local/etc/php/conf.d/xdebug.ini \
+#    && echo "xdebug.max_nesting_level=1000" >> /usr/local/etc/php/conf.d/xdebug.ini; fi

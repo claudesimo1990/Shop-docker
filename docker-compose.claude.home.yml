@@ -44,7 +44,7 @@ services:
         http_proxy: http://10.0.3.15:3128
         https_proxy: http://10.0.3.15:3128
     labels:
-      - "traefik.http.routers.portal2018-secure.rule=Host(`shop.development.claude`)"
+      - "traefik.http.routers.shop-secure.rule=Host(`shop.development.claude`)"
     links:
       - claude_shop_php-fpm
 
